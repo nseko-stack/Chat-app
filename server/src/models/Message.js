@@ -15,8 +15,14 @@ const messageSchema = new mongoose.Schema({
 
     content: {
         type: String,
-        required: true,
-        trim: true
+        trim: true,
+        default: ""
+    },
+
+    text: {
+        type: String,
+        trim: true,
+        default: ""
     },
 
     readBy: [
@@ -30,5 +36,13 @@ const messageSchema = new mongoose.Schema({
     timestamps: true
 }
 );
+
+messageSchema.pre('save', function () {
+    if (this.text && !this.content) {
+        this.content = this.text;
+    } else if (this.content && !this.text) {
+        this.text = this.content;
+    }
+});
 
 module.exports = mongoose.model("Message", messageSchema);

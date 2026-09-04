@@ -56,7 +56,7 @@ const createConversation = async (req, res) => {
         // return conversation with user information
         const conversation = await Conversation.findOne(
             { _id: existingConversation._id }
-        ).populate('participants', 'username email');
+        ).populate('participants', 'username email avatar isOnline lastSeen');
 
         res.status(201).json({
             message: "Conversation created successfully",
@@ -75,10 +75,12 @@ const getConversations = async (req, res) => {
     try {
         const currentUserId = req.user; // Get the current user ID from the request (set by authMiddleware)
 
-        // Find all conversations where the current user is a participant
+        // Find all conversations where the current user is a participant, sorted by recent activity
         const conversations = await Conversation.find({
             participants: currentUserId
-        }).populate('participants', 'username email');
+        })
+            .sort({ updatedAt: -1 })
+            .populate('participants', 'username email avatar isOnline lastSeen');
 
         res.status(200).json({
             message: "Conversations retrieved successfully",

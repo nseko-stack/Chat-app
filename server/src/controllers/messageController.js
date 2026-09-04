@@ -7,8 +7,10 @@ const sendMessage = async (req, res) => {
         const userId = req.user;
         const { conversationId, text } = req.body;
 
+        const messageText = text || req.body.content;
+
         // 1. Validate required fields
-        if (!conversationId || !text) {
+        if (!conversationId || !messageText) {
             return res.status(400).json({
                 message: "Please provide conversationId and text"
             });
@@ -45,13 +47,17 @@ const sendMessage = async (req, res) => {
         const message = new Message({
             conversationId,
             sender: userId,
-            text
+            text: messageText,
+            content: messageText
         });
 
         await message.save();
 
+        // Update conversation's updatedAt timestamp for sorting
+        await Conversation.findByIdAndUpdate(conversationId, { updatedAt: new Date() });
+
         // 6. Return created message
-        const populatedMessage = await message.populate('sender', 'username avatar');
+        const populatedMessage = await message.populate('sender', 'username avatar email');
 
         res.status(201).json({
             message: "Message sent successfully",
@@ -106,7 +112,7 @@ const getMessages = async (req, res) => {
             conversationId
         })
             .sort({ createdAt: 1 })
-            .populate("sender", "username avatar");
+            .populate("sender", "username avatar email");
 
         // 5. Return messages
         res.status(200).json({
